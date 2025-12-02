@@ -129,7 +129,7 @@ EOF
 
 docker build -t $name $name
 rm $name/dockerfile
-docker run -d --restart=unless-stopped -v $current_directory/$name/data:/data -p $port:22 $name
+docker run --gpus all -d --restart=unless-stopped -v $current_directory/$name/data:/data -p $port:22 $name
 
 echo "VM is running at port: $port"
 echo "Access by: ssh root@localhost -p $port"
