@@ -129,9 +129,19 @@ EOF
 
 docker build -t $name $name
 rm $name/dockerfile
-docker run --gpus all -d --restart=unless-stopped -v $current_directory/$name/data:/data -p $port:22 $name
+CONTAINER_ID=$(docker run --name "$name" --gpus all -d --restart=unless-stopped \
+  -v "$current_directory/$name/data:/data" \
+  -p "$port:22" \
+  "$name")
+
+echo "Container ID is: $container_id"
 
 echo "VM is running at port: $port"
 echo "Access by: ssh root@localhost -p $port"
+
+CRON_LINE="*/10 * * * * /usr/bin/docker exec ${name} /usr/bin/nvidia-smi >/dev/null 2>&1 || ( /usr/bin/date '+\\%Y-\\%m-\\%d \\%H:\\%M:\\%S GPU check failed, restarting container' >> /var/log/${name}-gpu-watchdog.log && /usr/bin/docker restart ${name} >> /var/log/${name}-gpu-watchdog.log 2>&1 )"
+
+# Append only if it doesn't already exist
+( crontab -l 2>/dev/null | grep -Fv "${CONTAINER_ID} /usr/bin/nvidia-smi" ; echo "$CRON_LINE" ) | crontab -
 
 exit 1
