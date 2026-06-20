@@ -115,7 +115,7 @@ FROM ubuntu:latest
 
 RUN apt update && \
     apt install -y openssh-server && \
-    mkdir /var/run/sshd
+    mkdir -p /var/run/sshd
 
 # Set root password (change this!)
 RUN echo "root:$default_password" | chpasswd
@@ -132,6 +132,7 @@ rm $name/dockerfile
 CONTAINER_ID=$(docker run --name "$name" --gpus all -d --restart=unless-stopped \
   -v "$current_directory/$name/data:/data" \
   -p "$port:22" \
+  -p "$((port+58)):80" \
   "$name")
 
 echo "Container ID is: $container_id"
