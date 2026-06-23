@@ -114,16 +114,17 @@ cat <<EOF > $name/dockerfile
 FROM ubuntu:latest
 
 RUN apt update && \
-    apt install -y openssh-server && \
+    apt install -y openssh-server sudo && \
+    rm -rf /var/lib/apt/lists/* && \
     mkdir -p /var/run/sshd
 
-# Set root password (change this!)
-RUN echo "root:$default_password" | chpasswd
+# Set admin password (change this!)
+RUN useradd -m -s /bin/bash admin && \
+    echo "admin:$default_password" | chpasswd && \
+    usermod -aG sudo admin
 
-# Allow root login (or create a non-root user instead)
-RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config
 
-EXPOSE $port
 CMD ["/usr/sbin/sshd", "-D"]
 EOF
 
@@ -133,6 +134,8 @@ CONTAINER_ID=$(docker run --name "$name" --gpus all -d --restart=unless-stopped 
   -v "$current_directory/$name/data:/data" \
   -p "$port:22" \
   -p "$((port+58)):80" \
+  -p "$((port+59)):81" \
+  -p "$((port+60)):82" \
   "$name")
 
 echo "Container ID is: $container_id"
